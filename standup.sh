@@ -1,26 +1,34 @@
 #!/bin/bash
 NODE_NAME=$(hostname)
 NICS=5  # Set the number of network interfaces
+ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
+
 
 function deploy_pfSense {
     read -p "Enter the number of cores for the VM: " cores
     read -p "Enter the memory size (in MB) for the VM: " memory
-    read -p "Enter the size of the new volume on local-lvm storage (in GB, e.g., 50G): " volume_size
+    read -p "Enter the size of the new volume on local-lvm storage (in GB, e.g., 50): " volume_size
 
-    echo "Downloading pfSense ISO..."
-    pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url http://lab-auto.zse-pov.net/pfsense.iso
+    if [ ! -f "$ISO_PATH" ]; then
+        echo "Downloading pfSense ISO..."
+        pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url http://lab-auto.zse-pov.net/pfsense.iso
+    else
+        echo "pfSense ISO already exists. Skipping download."
+    fi
 
     echo "Creating pfSense VM..."
 
-    NET_CONFIG=""
+    declare -a pvesh_cmd
+    pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
+
     for (( i=0; i<$NICS; i++ )); do
-        NET_CONFIG+="-net$i e1000,bridge=vmbr0,"
+        pvesh_cmd+=(-net$i "e1000,bridge=vmbr0")
     done
 
-    # Trim the last comma
-    NET_CONFIG=${NET_CONFIG%,}
+    pvesh_cmd+=(-cdrom "local:iso/pfesense.iso")
 
-    pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size} $NET_CONFIG -cdrom local:iso/pfesense.iso
+    # Execute the pvesh command
+    "${pvesh_cmd[@]}"
 
     echo "pfSense VM deployment is complete."
 }
