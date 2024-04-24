@@ -1,5 +1,6 @@
 #!/bin/bash
 NODE_NAME=$(hostname)
+NICS=5  # Set the number of network interfaces
 
 function deploy_pfSense {
     read -p "Enter the number of cores for the VM: " cores
@@ -10,7 +11,16 @@ function deploy_pfSense {
     pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url http://lab-auto.zse-pov.net/pfsense.iso
 
     echo "Creating pfSense VM..."
-    pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size} -net0 e1000,bridge=vmbr0 -cdrom local:iso/pfesense.iso
+
+    NET_CONFIG=""
+    for (( i=0; i<$NICS; i++ )); do
+        NET_CONFIG+="-net$i e1000,bridge=vmbr0,"
+    done
+
+    # Trim the last comma
+    NET_CONFIG=${NET_CONFIG%,}
+
+    pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size} $NET_CONFIG -cdrom local:iso/pfesense.iso
 
     echo "pfSense VM deployment is complete."
 }
