@@ -5,9 +5,22 @@ ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
 
 
 function deploy_pfSense {
-    read -p "Enter the number of cores for the VM: " cores
-    read -p "Enter the memory size (in MB) for the VM: " memory
-    read -p "Enter the size of the new volume on local-lvm storage (in GB, e.g., 50): " volume_size
+    # Set default values
+    local default_cores=4
+    local default_memory=8192  # in MB
+    local default_volume_size="50G"  # in GB
+
+    echo "Enter the number of cores for the VM (default: $default_cores): "
+    read cores
+    cores=${cores:-$default_cores}
+
+    echo "Enter the memory size (in MB) for the VM (default: $default_memory): "
+    read memory
+    memory=${memory:-$default_memory}
+
+    echo "Enter the size of the new volume on local-lvm storage (default: $default_volume_size): "
+    read volume_size
+    volume_size=${volume_size:-$default_volume_size}
 
     if [ ! -f "$ISO_PATH" ]; then
         echo "Downloading pfSense ISO..."
