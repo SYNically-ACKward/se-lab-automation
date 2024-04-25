@@ -25,7 +25,7 @@ function deploy_pfSense {
 
     if [ ! -f "$ISO_PATH" ]; then
         echo -e "\033[31mDownloading pfSense ISO...\033[0m"
-        pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url http://lab-auto.zse-pov.net/pfsense.iso
+        pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url https://se-lab-automation.s3.amazonaws.com/pfesense.iso
     else
         echo -e "\033[31mpfSense ISO already exists. Skipping download.\033[0m"
     fi
