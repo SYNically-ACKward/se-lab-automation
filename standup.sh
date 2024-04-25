@@ -129,14 +129,14 @@ function configure_pfsense {
         sleep 1
     done
 
-    sleep 5
+    sleep 10
 
     for i in "${key_sequence_2[@]}"; do
         pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
         sleep 1
     done
 
-    sleep 5
+    sleep 10
 
     pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "ret"
 
@@ -152,28 +152,27 @@ function configure_pfsense {
     # Apply PfSense configuration via SSH
     export SSHPASS=$PFSENSE_INITIAL_PASS
 
-    sshpass -e scp -o StrictHostKeyChecking=no $config_file_path admin@"$pfsense_ip":$remote_file_path
+    expect <<EOF
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no admin@"$pfsense_ip"
+expect "password:"
+send "$SSHPASS\r"
 
-    set timeout -1
+expect "Enter an option: "
+send "8\r"
 
-    spawn ssh -o StrictHostKeyChecking=no admin@"$pfsense_ip"
+expect -re {.*\/root: }
+send "rm /tmp/config.cache\r"
 
-    expect "password:"
-    send "$PFSENSE_INITIAL_PASS\r"
+expect -re {.*\/root: }
+send "exit\r"
 
-    expect "Enter an option: "
-    send "8\r"
+expect "Enter an option: "
+send "5\r"
 
-    expect -re {.*\/root: }
-    send "rm /tmp/config.cache\r"
+expect eof
 
-    expect -re {.*\/root: }
-    send "exit\r"
-
-    expect "Enter an option: "
-    send "5\r"
-
-    expect eof
+EOF
 
     echo "PfSense configuration complete - firewall now rebooting..."
 }
