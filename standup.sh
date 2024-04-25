@@ -7,9 +7,9 @@ PFSENSE_INITIAL_PASS="pfsense"
 
 function deploy_pfSense {
     # Set default values
-    local default_cores=4
-    local default_memory=8192  # in MB
-    local default_volume_size="50"  # in GB
+    local default_cores=2
+    local default_memory=4096  # in MB
+    local default_volume_size="32"  # in GB
 
     echo "Enter the number of cores for the VM (default: $default_cores): "
     read cores
