@@ -120,9 +120,9 @@ function configure_pfsense {
     apt update && apt install -y sshpass expect
 
     # Iterate through configuration key sequences to prep for SSH
-    key_sequence_1=("1" "ret" "n" "ret" "em0" "ret" "ret" "y" "ret" "y" "ret")
+    key_sequence_1=("1" "ret" "n" "ret" "e" "m" "0" "ret" "ret" "y" "ret" "y" "ret")
     key_sequence_2=("2" "ret" "y" "ret" "n" "ret" "ret" "y" "ret")
-    key_sequence_3=("14" "ret" "y" "ret")
+    key_sequence_3=("1" "4" "ret" "y" "ret")
 
     for i in "${key_sequence_1[@]}"; do
         pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
