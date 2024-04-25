@@ -2,6 +2,7 @@
 NODE_NAME=$(hostname)
 NICS=5  # Set the number of network interfaces
 ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
+PFSENSE_INITIAL_PASS="pfsense"
 
 
 function deploy_pfSense {
@@ -33,9 +34,10 @@ function deploy_pfSense {
 
     declare -a pvesh_cmd
     pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
-
+    nic_order=("vmbr0" "vmbr0" "vnet1" "vnet2" "vnet3")
     for (( i=0; i<$NICS; i++ )); do
-        pvesh_cmd+=(-net$i "e1000,bridge=vmbr0")
+        bridge=${nic_order[$i]}
+        pvesh_cmd+=(-net$i "e1000,bridge=$bridge")
     done
 
     pvesh_cmd+=(-cdrom "local:iso/pfesense.iso")
@@ -105,6 +107,77 @@ function configure_sdn {
     echo "Successfully applied networking changes..."
 }
 
+function configure_pfsense {
+    local config_file_link=""
+    config_file_path="/root/config.xml"
+    remote_file_path="/cf/conf/config.xml"
+
+    echo "Enter the WAN IP address shown in the PfSense Console screen:"
+    read pfsense_ip
+
+    wget $config_file_link
+    # Install sshpass and expect for configuration
+    apt update && apt install -y sshpass expect
+
+    # Iterate through configuration key sequences to prep for SSH
+    key_sequence_1=("1" "ret" "n" "ret" "em0" "ret" "ret" "y" "ret" "y" "ret")
+    key_sequence_2=("2" "ret" "y" "ret" "n" "ret" "ret" "y" "ret")
+    key_sequence_3=("14" "ret" "y" "ret")
+
+    for i in "${key_sequence_1[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
+        sleep 1
+    done
+
+    sleep 5
+
+    for i in "${key_sequence_2[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
+        sleep 1
+    done
+
+    sleep 5
+
+    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$ret"
+
+    sleep 1
+
+    for i in "${key_sequence_3[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
+        sleep 1
+    done
+
+    sleep 1
+
+    # Apply PfSense configuration via SSH
+    export SSHPASS=$PFSENSE_INITIAL_PASS
+
+    sshpass -e scp -o StrictHostKeyChecking=no $config_file_path admin@"$pfsense_ip":$remote_file_path
+
+    set timeout -1
+
+    spawn ssh -o StrictHostKeyChecking=no admin@"$pfsense_ip"
+
+    expect "password:"
+    send "$PFSENSE_INITIAL_PASS\r"
+
+    expect "Enter an option: "
+    send "8\r"
+
+    expect -re {.*\/root: }
+    send "rm /tmp/config.cache\r"
+
+    expect -re {.*\/root: }
+    send "exit\r"
+
+    expect "Enter an option: "
+    send "5\r"
+
+    expect eof
+
+    echo "PfSense configuration complete - firewall now rebooting..."
+}
+
 function main_menu {
     while true; do
         echo "Select an option:"
@@ -114,8 +187,9 @@ function main_menu {
         read -p "Enter your choice: " choice
 
         case "$choice" in
-            1) deploy_pfSense ;;
-			2) configure_sdn ;;
+            1) configure_sdn ;;
+			2) deploy_pfSense ;;
+            3) configure_pfsense ;;
             q) echo "Exiting the script."
                exit 0 ;;
             *) echo "Invalid option, please try again." ;;
