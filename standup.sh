@@ -138,7 +138,7 @@ function configure_pfsense {
 
     sleep 5
 
-    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$ret"
+    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "ret"
 
     sleep 1
 
