@@ -1,0 +1,24 @@
+#!/usr/bin/expect -f
+
+set host [lindex $argv 0]
+set user [lindex $argv 1]
+set password [lindex $argv 2]
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+
+expect -re "*.\:"
+send "$password\r"
+
+expect "Enter an option: "
+send "8\r"
+
+expect -re {.*\/root: }
+send "rm /tmp/config.cache\r"
+
+expect -re {.*\/root: }
+send "exit\r"
+
+expect "Enter an option: "
+send "5\r"
+
+expect eof

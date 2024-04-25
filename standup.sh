@@ -109,6 +109,7 @@ function configure_sdn {
 
 function configure_pfsense {
     local config_file_link="https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/config.xml"
+    local login_script_link="https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/login.exp"
     config_file_path="/root/config.xml"
     remote_file_path="/cf/conf/config.xml"
 
@@ -116,6 +117,7 @@ function configure_pfsense {
     read pfsense_ip
 
     wget $config_file_link
+    wget $login_script_link
     # Install sshpass and expect for configuration
     apt update && apt install -y sshpass expect
 
@@ -152,27 +154,7 @@ function configure_pfsense {
     # Apply PfSense configuration via SSH
     export SSHPASS=$PFSENSE_INITIAL_PASS
 
-    expect <<EOF
-set timeout -1
-spawn ssh -o StrictHostKeyChecking=no admin@"$pfsense_ip"
-expect "password:"
-send "$SSHPASS\r"
-
-expect "Enter an option: "
-send "8\r"
-
-expect -re {.*\/root: }
-send "rm /tmp/config.cache\r"
-
-expect -re {.*\/root: }
-send "exit\r"
-
-expect "Enter an option: "
-send "5\r"
-
-expect eof
-
-EOF
+    /root/login.exp "$pfsense_ip" "admin" "$PFSENSE_INITIAL_PASS"
 
     echo "PfSense configuration complete - firewall now rebooting..."
 }
