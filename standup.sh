@@ -189,7 +189,7 @@ function main_menu {
 
         case "$choice" in
             1) configure_sdn ;;
-			2) deploy_pfSense ;;
+            2) deploy_pfSense ;;
             3) configure_pfsense ;;
             q) echo "Exiting the script."
                exit 0 ;;
