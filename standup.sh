@@ -154,7 +154,7 @@ function configure_pfsense {
     # Apply PfSense configuration via SSH
     export SSHPASS=$PFSENSE_INITIAL_PASS
 
-    /root/login.exp "$pfsense_ip" "admin" "$PFSENSE_INITIAL_PASS"
+    expect /root/login.exp "$pfsense_ip" "admin" "$PFSENSE_INITIAL_PASS"
 
     echo "PfSense configuration complete - firewall now rebooting..."
 }

@@ -6,7 +6,7 @@ set password [lindex $argv 2]
 
 spawn ssh -o StrictHostKeyChecking=no $user@$host
 
-expect -re "*.\:"
+expect -re ".*\:"
 send "$password\r"
 
 expect "Enter an option: "
