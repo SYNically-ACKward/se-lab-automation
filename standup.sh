@@ -108,7 +108,7 @@ function configure_sdn {
 }
 
 function configure_pfsense {
-    local config_file_link=""
+    local config_file_link="https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/config.xml"
     config_file_path="/root/config.xml"
     remote_file_path="/cf/conf/config.xml"
 
@@ -181,8 +181,9 @@ function configure_pfsense {
 function main_menu {
     while true; do
         echo "Select an option:"
-        echo "1) Deploy pfSense"
-        echo "2) Configure Networking"
+        echo "1) Configure Networking"
+        echo "2) Deploy pfSense"
+        echo "3) Apply pfSense Base Config"
         echo "q) Quit"
         read -p "Enter your choice: " choice
 
