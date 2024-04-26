@@ -27,7 +27,7 @@ NIC1: vmbr0 \
 NIC2: vmbr0 \
 NIC3: vnet1 \
 NIC4: vnet2 \
-NIC5: vnet3 \
+NIC5: vnet3
 
 > :warning: **Note**: After successfully running the 'Deploy pfSense' component the user will need to open the ProxMox webUI and go to the 'Console' tab for the VM and complete the installation of the pfSense OS in order to proceed to the next step of the automation script. This will be automated in the future. 
 
