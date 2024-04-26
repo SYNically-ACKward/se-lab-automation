@@ -8,9 +8,13 @@ To invoke the script ssh to your ProxMox VE instance as the root user and run th
 
 The script options are intended to be executed in order as the components build on each other. For instance, the 'Deploy pfSense' option will reference SDN VNETs created by the 'Configure Networking' component. Improvements will be made in the future to abstract each of thsese components from one another. 
 
+***
+
 ## Component - Configure Networking
 
 Configure Networking will configure the SDN options within ProxMox VE. A single zone named 'lan' will be created that contains three VNETs - vnet1, vnet2, vnet3. Each of these VNETs will have a single associated subnet 10.X.0.0/24 with the 'X' matching the last digit of the VNET name. This component will also install dnsmasq on the ProxMox VE node and enable PVE-managed IPAM. DHCP ranges for .20-254 will be created for each subnet. 
+
+***
 
 ## Component - Deploy pfSense
 
@@ -24,6 +28,10 @@ NIC2: vmbr0
 NIC3: vnet1
 NIC4: vnet2
 NIC5: vnet3
+
+> :warning: **Note**: After successfully running the 'Deploy pfSense' component the user will need to open the ProxMox webUI and go to the 'Console' tab for the VM and complete the installation of the pfSense OS in order to proceed to the next step of the automation script. This will be automated in the future. 
+
+***
 
 ## Component - Apply pfSense Base Config
 
