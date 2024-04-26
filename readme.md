@@ -20,14 +20,14 @@ Configure Networking will configure the SDN options within ProxMox VE. A single 
 
 Deploy pfSense will pull a pfSense ISO from an S3 bucket (note that this will take some time) and will deploy a QEMU Virtual Machine with VMID 777 on the ProxMox VE node. The VM will have the following specifications by default with the user being prompted to adjust if necessary:
 
-CPU: 2
-Memory: 4096
-Disk: 32Gb
-NIC1: vmbr0
-NIC2: vmbr0
-NIC3: vnet1
-NIC4: vnet2
-NIC5: vnet3
+CPU: 2 \
+Memory: 4096 \
+Disk: 32Gb \
+NIC1: vmbr0 \
+NIC2: vmbr0 \
+NIC3: vnet1 \
+NIC4: vnet2 \
+NIC5: vnet3 \
 
 > :warning: **Note**: After successfully running the 'Deploy pfSense' component the user will need to open the ProxMox webUI and go to the 'Console' tab for the VM and complete the installation of the pfSense OS in order to proceed to the next step of the automation script. This will be automated in the future. 
 
