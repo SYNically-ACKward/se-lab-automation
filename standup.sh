@@ -47,7 +47,31 @@ function deploy_pfSense {
     # Execute the pvesh command
     "${pvesh_cmd[@]}"
 
-    echo -e "${red}pfSense VM deployment is complete.${reset}"
+    echo -e "${red}pfSense VM deployment is complete. Booting up...${reset}"
+
+    pvesh create /nodes/$NODE_NAME/qemu/777/status/start
+
+    echo -e "${red}Waiting for 45 seconds for pfSense initial boot...${reset}"
+
+    sleep 45
+
+    echo -e "${red}Performing pfSense initial installation..."
+
+    install_sequence_1=("ret" "ret" "ret" "ret" "ret" "spc" "ret" "left" "ret")
+
+    for i in "${install_sequence_1[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
+        sleep 1
+    done
+
+    echo -e "${red}Waiting 30 seconds for pfSense install to complete before performing reboot...${reset}"
+
+    sleep 30
+
+    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "ret"
+
+    echo -e "${red}pfSense Operating System install is complete...${reset}"
+
 }
 
 function configure_sdn {
