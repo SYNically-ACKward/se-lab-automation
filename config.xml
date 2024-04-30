@@ -29,7 +29,7 @@
 			<groupname>admins</groupname>
 			<uid>0</uid>
 			<priv>user-shell-access</priv>
-			<bcrypt-hash>$2y$10$be60K7Tj.w96Bim7Hua/..cmEG1nzkPhN0F90MzOt65BktPZ68tTG</bcrypt-hash>
+			<bcrypt-hash>$2y$10$3gjw/D1WJ5Lju4MppX536.l1y00Ov63odKNwoMYGTfUhnpi.FhI1u</bcrypt-hash>
 		</user>
 		<nextuid>2000</nextuid>
 		<nextgid>2000</nextgid>
@@ -54,8 +54,8 @@
 		<hn_altq_enable></hn_altq_enable>
 		<already_run_config_upgrade></already_run_config_upgrade>
 		<ssh></ssh>
-		<dnsserver>8.8.8.8</dnsserver>
 		<dnsserver>1.1.1.1</dnsserver>
+		<dnsserver>8.8.8.8</dnsserver>
 		<timezone>Etc/UTC</timezone>
 		<prefer_ipv4></prefer_ipv4>
 	</system>
@@ -78,6 +78,8 @@
 			<descr><![CDATA[OPT]]></descr>
 			<if>em1</if>
 			<spoofmac></spoofmac>
+			<ipaddr>dhcp</ipaddr>
+			<subnet>24</subnet>
 		</lan>
 		<opt1>
 			<descr><![CDATA[LAN1]]></descr>
@@ -217,6 +219,12 @@
 			<rootpath></rootpath>
 			<numberoptions></numberoptions>
 		</opt3>
+		<lan>
+			<range>
+				<from>0.0.0.1</from>
+				<to>255.255.255.255</to>
+			</range>
+		</lan>
 	</dhcpd>
 	<dhcpdv6></dhcpdv6>
 	<snmpd>
@@ -546,11 +554,24 @@
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1714507076</time>
-		<description><![CDATA[admin@10.30.15.237 (Local Database): DHCP Server - Settings changed for interface OPT3]]></description>
+		<time>1714508217</time>
+		<description><![CDATA[admin@10.30.15.237 (Local Database): Gateway settings changed]]></description>
 		<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
 	</revision>
-	<gateways></gateways>
+	<gateways>
+		<defaultgw4></defaultgw4>
+		<defaultgw6>-</defaultgw6>
+		<gateway_item>
+			<interface>wan</interface>
+			<gateway>dynamic</gateway>
+			<name>WAN_DHCP</name>
+			<weight>1</weight>
+			<ipprotocol>inet</ipprotocol>
+			<descr><![CDATA[Interface WAN_DHCP Gateway]]></descr>
+			<monitor_disable></monitor_disable>
+			<gw_down_kill_states></gw_down_kill_states>
+		</gateway_item>
+	</gateways>
 	<captiveportal></captiveportal>
 	<dnsmasq></dnsmasq>
 	<ntpd>
