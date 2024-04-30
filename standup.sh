@@ -237,7 +237,7 @@ function create_servers {
         --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
         --start 1
 
-    wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/container_1.sh
+    wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/dev/container_1.sh
 
     pct push 800 /root/container_1.sh
 
