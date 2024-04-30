@@ -3,6 +3,8 @@ NODE_NAME=$(hostname)
 NICS=5  # Set the number of network interfaces
 ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
 PFSENSE_INITIAL_PASS="pfsense"
+red=$(tput setaf 1)
+reset=$(tput sgr0)
 
 
 function deploy_pfSense {
@@ -24,13 +26,13 @@ function deploy_pfSense {
     volume_size=${volume_size:-$default_volume_size}
 
     if [ ! -f "$ISO_PATH" ]; then
-        echo -e "\033[31mDownloading pfSense ISO...\033[0m"
+        echo -e "${red}Downloading pfSense ISO...${reset}"
         pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename pfesense.iso --url https://se-lab-automation.s3.amazonaws.com/pfesense.iso
     else
-        echo -e "\033[31mpfSense ISO already exists. Skipping download.\033[0m"
+        echo -e "${red}pfSense ISO already exists. Skipping download.${reset}"
     fi
 
-    echo -e "\033[31mCreating pfSense VM...\033[0m"
+    echo -e "${red}Creating pfSense VM...${reset}"
 
     declare -a pvesh_cmd
     pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
@@ -45,7 +47,7 @@ function deploy_pfSense {
     # Execute the pvesh command
     "${pvesh_cmd[@]}"
 
-    echo -e "\033[31mpfSense VM deployment is complete.\033[0m"
+    echo -e "${red}pfSense VM deployment is complete.${reset}"
 }
 
 function configure_sdn {
@@ -65,7 +67,7 @@ function configure_sdn {
     read lan_3
     lan_3=${lan_3:-$default_lan_3}
 
-    echo -e "\033[31mCreating SDN Zone 'lan' and installing dnsmasq...\033[0m"
+    echo -e "${red}Creating SDN Zone 'lan' and installing dnsmasq...${reset}"
 
     # Update APT repos, install DNSMASQ and disable default DNSMASQ instance
     apt-get update -qq && apt-get install -y -qq dnsmasq && systemctl disable --now dnsmasq
@@ -73,16 +75,16 @@ function configure_sdn {
     # Create SDN Zone
     pvesh create /cluster/sdn/zones -zone lan -type simple -dhcp dnsmasq -nodes $NODE_NAME -ipam pve
 
-    echo -e "\033[31mCreated SDN Zone 'lan' and installed dnsmasq successfully...\033[0m"
-    echo -e "\033[31mCreating VNETs 1-3 in new SDN Zone\033[0m"
+    echo -e "${red}Created SDN Zone 'lan' and installed dnsmasq successfully...${reset}"
+    echo -e "${red}Creating VNETs 1-3 in new SDN Zone${reset}"
 
     # Loop to create VNETs 1-3 in SDN Zone 'lan'
     for (( i=1; i<=3; i++ )); do
         pvesh create /cluster/sdn/vnets --vnet vnet${i} --zone lan
     done
 
-    echo -e "\033[31mSuccessfully created VNETs 1-3 in lan zone...\033[0m"
-    echo -e "\033[31mCreating subnets and associating with VNETs...\033[0m"
+    echo -e "${red}Successfully created VNETs 1-3 in lan zone...${reset}"
+    echo -e "${red}Creating subnets and associating with VNETs...${reset}"
 
     for (( i=1; i<=3; i++ )); do
 	    lan_var="lan_$i"
@@ -100,11 +102,11 @@ function configure_sdn {
 
     done
 
-    echo -e "\033[31mSuccessfully created subnets, applying networking changes...\033[0m"
+    echo -e "${red}Successfully created subnets, applying networking changes...${reset}"
 
     pvesh set /cluster/sdn
 
-    echo -e "\033[31mSuccessfully applied networking changes...\033[0m"
+    echo -e "${red}Successfully applied networking changes...${reset}"
 }
 
 function configure_pfsense {
@@ -126,25 +128,25 @@ function configure_pfsense {
     key_sequence_2=("2" "ret" "y" "ret" "n" "ret" "ret" "y" "ret")
     key_sequence_3=("1" "4" "ret" "y" "ret")
 
-    echo -e "\033[31mPerforming key sequence 1...\033[0m"
+    echo -e "${red}Performing key sequence 1...${reset}"
 
     for i in "${key_sequence_1[@]}"; do
         pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
         sleep 1
     done
 
-    echo -e "\033[31mSleeping for 10 seconds...\033[0m"
+    echo -e "${red}Sleeping for 10 seconds...${reset}"
 
     sleep 10
 
-    echo -e "\033[31mPerforming key sequence 2...\033[0m"
+    echo -e "${red}Performing key sequence 2...${reset}"
 
     for i in "${key_sequence_2[@]}"; do
         pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
         sleep 1
     done
 
-    echo -e "\033[31mSleeping for 10 seconds...\033[0m"
+    echo -e "${red}Sleeping for 10 seconds...${reset}"
 
     sleep 10
 
@@ -152,7 +154,7 @@ function configure_pfsense {
 
     sleep 1
 
-    echo -e "\033[31mPerforming key sequence 3...\033[0m"
+    echo -e "${red}Performing key sequence 3...${reset}"
 
     for i in "${key_sequence_3[@]}"; do
         pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
@@ -161,7 +163,7 @@ function configure_pfsense {
 
     sleep 1
 
-    echo -e "\033[31mPerforming SSH configuration of pfSense...\033[0m"
+    echo -e "${red}Performing SSH configuration of pfSense...${reset}"
 
     # Apply PfSense configuration via SSH
     export SSHPASS=$PFSENSE_INITIAL_PASS
@@ -170,7 +172,19 @@ function configure_pfsense {
 
     expect /root/login.exp "$pfsense_ip" "admin" "$PFSENSE_INITIAL_PASS"
 
-    echo -e "\033[31mPfSense configuration complete - firewall now rebooting...\033[0m"
+    echo -e "${red}PfSense configuration complete - firewall now rebooting...${reset}"
+}
+
+function cleanup {
+    echo -e "${red}Cleaning up packages before exit...${reset}"
+    apt-get remove -y expect sshpass
+    echo -e "${red}Cleaning up files before exit...${reset}"
+    file_list=("standup.sh" "config.xml" "login.exp")
+    for file in "${file_list[@]}"; do
+        if test -f "/root/$file"; then
+            rm "/root/$file"
+        fi
+    done
 }
 
 function main_menu {
@@ -186,7 +200,8 @@ function main_menu {
             1) configure_sdn ;;
             2) deploy_pfSense ;;
             3) configure_pfsense ;;
-            q) echo "Exiting the script."
+            q) cleanup
+               echo "Exiting the script."
                exit 0 ;;
             *) echo "Invalid option, please try again." ;;
         esac
