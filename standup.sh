@@ -97,7 +97,7 @@ function configure_sdn {
     apt-get update -qq && apt-get install -y -qq dnsmasq && systemctl disable --now dnsmasq
 
     # Create SDN Zone
-    pvesh create /cluster/sdn/zones -zone lan -type simple -dhcp dnsmasq -nodes $NODE_NAME -ipam pve
+    pvesh create /cluster/sdn/zones -zone lan -type simple -nodes $NODE_NAME -ipam pve
 
     echo -e "${red}Created SDN Zone 'lan' and installed dnsmasq successfully...${reset}"
     echo -e "${red}Creating VNETs 1-3 in new SDN Zone${reset}"
@@ -235,7 +235,7 @@ function create_servers {
         --password "zscaler" \
         --storage local-lvm \
         --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
-        --nameserver "10.2.0.1"
+        --nameserver "10.2.0.1" \
         --start 1
 
     wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/container_1.sh
