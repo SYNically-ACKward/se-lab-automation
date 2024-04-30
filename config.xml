@@ -5,8 +5,7 @@
 	<system>
 		<optimization>normal</optimization>
 		<hostname>pfSense</hostname>
-		<domain>home.arpa</domain>
-		<dnsallowoverride>on</dnsallowoverride>
+		<domain>zscaler.lab</domain>
 		<group>
 			<name>all</name>
 			<description><![CDATA[All Users]]></description>
@@ -40,6 +39,8 @@
 			<ssl-certref>662a7b6c41319</ssl-certref>
 			<dashboardcolumns>2</dashboardcolumns>
 			<althostnames></althostnames>
+			<webguicss>pfSense-dark.css</webguicss>
+			<logincss>1e3f75;</logincss>
 		</webgui>
 		<disablenatreflection>yes</disablenatreflection>
 		<disablesegmentationoffloading></disablesegmentationoffloading>
@@ -58,6 +59,10 @@
 			<enable>enabled</enable>
 		</ssh>
 		<timezone>Etc/UTC</timezone>
+		<language>en_US</language>
+		<dnsserver>8.8.8.8</dnsserver>
+		<dnsallowoverride></dnsallowoverride>
+		<dns1gw>none</dns1gw>
 	</system>
 	<interfaces>
 		<wan>
@@ -79,10 +84,11 @@
 			<descr><![CDATA[MGMT]]></descr>
 			<if>em1</if>
 			<enable></enable>
-			<ipaddr>dhcp</ipaddr>
-			<dhcphostname></dhcphostname>
 			<alias-address></alias-address>
 			<alias-subnet>32</alias-subnet>
+			<spoofmac></spoofmac>
+			<ipaddr>dhcp</ipaddr>
+			<dhcphostname></dhcphostname>
 			<dhcprejectfrom></dhcprejectfrom>
 			<adv_dhcp_pt_timeout></adv_dhcp_pt_timeout>
 			<adv_dhcp_pt_retry></adv_dhcp_pt_retry>
@@ -98,13 +104,10 @@
 			<adv_dhcp_config_advanced></adv_dhcp_config_advanced>
 			<adv_dhcp_config_file_override></adv_dhcp_config_file_override>
 			<adv_dhcp_config_file_override_path></adv_dhcp_config_file_override_path>
-			<blockbogons></blockbogons>
-			<spoofmac></spoofmac>
 		</lan>
 		<opt1>
 			<descr><![CDATA[LAN1]]></descr>
 			<if>em2</if>
-			<blockbogons></blockbogons>
 			<spoofmac></spoofmac>
 			<enable></enable>
 			<ipaddr>10.1.0.1</ipaddr>
@@ -114,19 +117,17 @@
 			<descr><![CDATA[LAN2]]></descr>
 			<if>em3</if>
 			<enable></enable>
+			<spoofmac></spoofmac>
 			<ipaddr>10.2.0.1</ipaddr>
 			<subnet>24</subnet>
-			<blockbogons></blockbogons>
-			<spoofmac></spoofmac>
 		</opt2>
 		<opt3>
 			<descr><![CDATA[LAN3]]></descr>
 			<if>em4</if>
 			<enable></enable>
+			<spoofmac></spoofmac>
 			<ipaddr>10.3.0.1</ipaddr>
 			<subnet>24</subnet>
-			<blockbogons></blockbogons>
-			<spoofmac></spoofmac>
 		</opt3>
 	</interfaces>
 	<staticroutes>
@@ -254,7 +255,6 @@
 			<statetimeout></statetimeout>
 			<statetype><![CDATA[keep state]]></statetype>
 			<os></os>
-			<protocol>tcp</protocol>
 			<source>
 				<network>opt1</network>
 			</source>
@@ -262,14 +262,14 @@
 				<any></any>
 			</destination>
 			<descr><![CDATA[Permit all Outbound]]></descr>
-			<updated>
-				<time>1714063196</time>
-				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
-			</updated>
 			<created>
 				<time>1714063196</time>
 				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
 			</created>
+			<updated>
+				<time>1714497931</time>
+				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
+			</updated>
 		</rule>
 		<rule>
 			<id></id>
@@ -286,7 +286,6 @@
 			<statetimeout></statetimeout>
 			<statetype><![CDATA[keep state]]></statetype>
 			<os></os>
-			<protocol>tcp</protocol>
 			<source>
 				<network>opt2</network>
 			</source>
@@ -294,14 +293,14 @@
 				<any></any>
 			</destination>
 			<descr><![CDATA[Permit all Outbound]]></descr>
-			<updated>
-				<time>1714063216</time>
-				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
-			</updated>
 			<created>
 				<time>1714063216</time>
 				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
 			</created>
+			<updated>
+				<time>1714497766</time>
+				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
+			</updated>
 		</rule>
 		<rule>
 			<id></id>
@@ -318,7 +317,6 @@
 			<statetimeout></statetimeout>
 			<statetype><![CDATA[keep state]]></statetype>
 			<os></os>
-			<protocol>tcp</protocol>
 			<source>
 				<network>opt3</network>
 			</source>
@@ -326,14 +324,14 @@
 				<any></any>
 			</destination>
 			<descr><![CDATA[Permit all Outbound]]></descr>
-			<updated>
-				<time>1714063231</time>
-				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
-			</updated>
 			<created>
 				<time>1714063231</time>
 				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
 			</created>
+			<updated>
+				<time>1714497943</time>
+				<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
+			</updated>
 		</rule>
 		<separator>
 			<wan></wan>
@@ -442,13 +440,13 @@
 	<wol></wol>
 	<rrd>
 		<enable></enable>
+		<category>left=system-processor&amp;right=&amp;resolution=300&amp;timePeriod=-1d&amp;startDate=&amp;endDate=&amp;startTime=0&amp;endTime=0&amp;graphtype=line&amp;invert=true&amp;refresh-interval=0</category>
 	</rrd>
 	<widgets>
 		<sequence>system_information:col1:show,disks:col1:show,netgate_services_and_support:col2:show,interfaces:col2:show</sequence>
 		<period>10</period>
 	</widgets>
-	<openvpn>
-	</openvpn>
+	<openvpn></openvpn>
 	<dnshaper></dnshaper>
 	<unbound>
 		<enable></enable>
@@ -468,11 +466,13 @@
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1714063256</time>
-		<description><![CDATA[admin@10.30.15.237 (Local Database): DNS Resolver configured.]]></description>
+		<time>1714498158</time>
+		<description><![CDATA[admin@10.30.15.237 (Local Database): System:  domain: &quot;home.arpa&quot; -&gt; &quot;zscaler.lab&quot;]]></description>
 		<username><![CDATA[admin@10.30.15.237 (Local Database)]]></username>
 	</revision>
 	<gateways>
+		<defaultgw4>WAN_DHCP</defaultgw4>
+		<defaultgw6></defaultgw6>
 	</gateways>
 	<captiveportal></captiveportal>
 	<dnsmasq></dnsmasq>
