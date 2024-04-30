@@ -239,7 +239,7 @@ function create_servers {
 
     wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/dev/container_1.sh
 
-    pct push 800 /root/container_1.sh
+    pct push 800 /root/container_1.sh /root/container_1.sh
 
     pct exec 800 -- /bin/bash /root/container_1.sh
 }
