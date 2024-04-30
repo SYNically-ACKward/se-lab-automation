@@ -4,7 +4,7 @@ This script is intended to stand up a base lab environment on a *fresh* ProxMox 
 
 # Usage
 
-To invoke the script ssh to your ProxMox VE instance as the root user and run the command `wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/standup.sh | bash standup.sh` and follow the subsequent menu prompts. 
+To invoke the script ssh to your ProxMox VE instance as the root user and run the command `wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/standup.sh && bash standup.sh` and follow the subsequent menu prompts. 
 
 The script options are intended to be executed in order as the components build on each other. For instance, the 'Deploy pfSense' option will reference SDN VNETs created by the 'Configure Networking' component. Improvements will be made in the future to abstract each of thsese components from one another. 
 
