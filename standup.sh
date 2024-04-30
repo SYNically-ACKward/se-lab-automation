@@ -235,6 +235,7 @@ function create_servers {
         --password "zscaler" \
         --storage local-lvm \
         --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
+        --nameserver "10.2.0.1"
         --start 1
 
     wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/container_1.sh
