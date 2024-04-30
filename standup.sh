@@ -199,6 +199,51 @@ function configure_pfsense {
     echo -e "${red}PfSense configuration complete - firewall now rebooting...${reset}"
 }
 
+function create_servers {
+    echo -e "${red}Updating CT Template Repositories...${reset}"
+    pveam update
+
+    echo -e "${red}Downloading Ubuntu 22.04 template...${reset}"
+
+    template_name=$(pveam available --section system | grep "ubuntu-22.04-standard_22.04-" | head -n 1 | awk '{print $2}')
+
+
+    if [ -z "$template_name" ]; then
+        echo "No matching Ubuntu 22.04 template found."
+    else
+        echo -e "${red}Downloading template: $template_name ${reset}"
+        pveam download local "$template_name"
+    fi
+
+    echo -e "${red}Ensuring SSH keys exist on ProxMox VE Host... Creating if not...${reset}"
+
+    if ! test -f /root/.ssh/id_rsa.pub; then
+        ssh-keygen -b 2048 -t rsa -f /root/.ssh/ -q -N ""
+        echo -e "${red}Creating SSH keys..."
+    else
+        echo -e "${red}SSH Keys already exist. Continuing..."
+    fi
+
+    echo -e "${red}Creating Ubuntu 22.04 containers...${reset}"
+
+    pvesh create /nodes/$NODE_NAME/lxc \
+        --vmid 800 \
+        --ostemplate "local:vztmpl/${template_name}" \
+        --hostname ubuntu1 \
+        --net0 "name=eth0,bridge=vnet2,ip=dhcp,firewall=0" \
+        --ostype "ubuntu" \
+        --password "zscaler" \
+        --storage local-lvm \
+        --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
+        --start 1
+
+    wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/container_1.sh
+
+    pct push 800 /root/container_1.sh /root/container_1.sh
+
+    pct exec 800 -- /bin/bash /root/container_1.sh
+}
+
 function cleanup {
     echo -e "${red}Cleaning up packages before exit...${reset}"
     apt-get remove -y expect sshpass
@@ -217,6 +262,9 @@ function main_menu {
         echo "1) Configure Networking"
         echo "2) Deploy pfSense"
         echo "3) Apply pfSense Base Config"
+        echo "4) Create 'Server' Containers"
+        echo "5) Create 'User' VMs"
+        echo "6) Create 'IOT' Containers"
         echo "q) Quit"
         read -p "Enter your choice: " choice
 
@@ -224,6 +272,7 @@ function main_menu {
             1) configure_sdn ;;
             2) deploy_pfSense ;;
             3) configure_pfsense ;;
+            4) create_servers ;;
             q) cleanup
                echo "Exiting the script."
                exit 0 ;;
