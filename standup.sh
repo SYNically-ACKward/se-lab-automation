@@ -113,14 +113,6 @@ function configure_sdn {
     for (( i=1; i<=3; i++ )); do
 	    lan_var="lan_$i"
 	    subnet=${!lan_var}  # This uses indirect expansion to get the value of the variable named in lan_var
-	    # # Remove the CIDR notation
-	    # subnet_base=${subnet%/*}  # This strips off the CIDR part, e.g., /24
-
-	    # # Get the first three octets of the subnet base and append .1
-	    # IFS='.' read -r -a octets <<< "$subnet_base"  # Split the IP into an array by dot
-	    # gateway="${octets[0]}.${octets[1]}.${octets[2]}.1"  # Reconstruct the gateway IP
-	    # dhcp_start="${octets[0]}.${octets[1]}.${octets[2]}.20"
-	    # dhcp_end="${octets[0]}.${octets[1]}.${octets[2]}.254"
 
 	    pvesh create /cluster/sdn/vnets/vnet$i/subnets --subnet $subnet --type subnet
 
