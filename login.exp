@@ -22,6 +22,6 @@ expect "Enter an option: "
 send "5\r"
 
 expect "Enter an option: "
-send "y\r"
+send "r\r"
 
 expect eof
