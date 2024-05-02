@@ -1,14 +1,19 @@
 #!/bin/bash
 NODE_NAME=$(hostname)
-NICS=5  # Set the number of network interfaces
-ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
+NICS=4  # Set the number of network interfaces
 PFSENSE_INITIAL_PASS="pfsense"
 red=$(tput setaf 1)
 reset=$(tput sgr0)
 
-
+function send_keystrokes() {
+    for i in "$@"; do
+        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
+        sleep 0.1
+    done
+}
 function deploy_pfSense {
     # Set default values
+    local ISO_PATH="/var/lib/vz/template/iso/pfesense.iso"
     local default_cores=2
     local default_memory=4096  # in MB
     local default_volume_size="32"  # in GB
@@ -36,7 +41,7 @@ function deploy_pfSense {
 
     declare -a pvesh_cmd
     pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
-    nic_order=("vmbr0" "vmbr0" "vnet1" "vnet2" "vnet3")
+    nic_order=("vmbr0" "vnet1" "vnet2" "vnet3")
     for (( i=0; i<$NICS; i++ )); do
         bridge=${nic_order[$i]}
         pvesh_cmd+=(-net$i "e1000,bridge=$bridge")
@@ -256,15 +261,156 @@ function cleanup {
     done
 }
 
+function deploy_opnsense {
+    # Set default values
+    local VMID=778
+    local ISO_PATH="/var/lib/vz/template/iso/opnsense.iso"
+    local IMG_DIR="/var/lib/vz/private/"
+    local IMG_PATH="/var/lib/vz/private/usb1.img"
+    local default_cores=2
+    local default_memory=4096  # in MB
+    local default_volume_size="32"  # in GB
+    local mkdir_chars=('m' 'k' 'd' 'i' 'r' 'spc' 'slash' 'm' 'n' 't' 'slash' 'u' 's' 'b' 'ret')
+    local mount_chars=('m' 'o' 'u' 'n' 't' 'spc' 'minus' 't' 'spc' 'm' 's' 'd' 'o' 's' 'f' 's' 'spc' 'slash' 'd' 'e' 'v' 'slash' 'd' 'a' '1' 'spc' 'slash' 'm' 'n' 't' 'slash' 'u' 's' 'b' 'ret')
+    local cp_chars=('c' 'p' 'spc' 'slash' 'm' 'n' 't' 'slash' 'u' 's' 'b' 'slash' 'c' 'o' 'n' 'f' 'slash' 'c' 'o' 'n' 'f' 'i' 'g' 'dot' 'x' 'm' 'l' 'spc' 'slash' 'c' 'o' 'n' 'f' 'slash' 'c' 'o' 'n' 'f' 'i' 'g' 'dot' 'x' 'm' 'l' 'ret')
+    local umount_chars=('u' 'm' 'o' 'u' 'n' 't' 'spc' 'slash' 'm' 'n' 't' 'slash' 'u' 's' 'b' 'ret')
+    local exit_chars=('e' 'x' 'i' 't' 'ret')
+    local login_chars=('r' 'o' 'o' 't' 'ret' 'o' 'p' 'n' 's' 'e' 'n' 's' 'e' 'ret')
+
+
+    echo "Enter the number of cores for the VM (default: $default_cores): "
+    read cores
+    cores=${cores:-$default_cores}
+
+    echo "Enter the memory size (in MB) for the VM (default: $default_memory): "
+    read memory
+    memory=${memory:-$default_memory}
+
+    echo "Enter the size of the new volume on local-lvm storage (default: $default_volume_size): "
+    read volume_size
+    volume_size=${volume_size:-$default_volume_size}
+
+    if [ ! -f "$ISO_PATH" ]; then
+        echo -e "${red}Downloading OPNsense ISO...${reset}"
+        pvesh create /nodes/$NODE_NAME/storage/local/download-url --content iso --filename opnsense.iso --url https://se-lab-automation.s3.amazonaws.com/opnsense.iso
+    else
+        echo -e "${red}OPNsense ISO already exists. Skipping download.${reset}"
+    fi
+
+    if [ ! -d "$IMG_DIR" ]; then
+        echo -e "${red}Creating Private Template director at ${IMG_DIR}...${reset}"
+        mkdir $IMG_DIR
+    fi
+
+    echo -e "${red}Downloading configuration drive...${reset}"
+
+    wget -O "${IMG_PATH}" https://se-lab-automation.s3.amazonaws.com/usb1.img
+
+    echo -e "${red}Creating OPNsense VM...${reset}"
+
+    declare -a pvesh_cmd
+    pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu --vmid $VMID -name opnsense --sockets 1 --cores "$cores" --memory "$memory" --ostype l26 --scsihw virtio-scsi-single --scsi0 local-lvm:${volume_size})
+    nic_order=("vmbr0" "vnet1" "vnet2" "vnet3")
+    for (( i=0; i<$NICS; i++ )); do
+        bridge=${nic_order[$i]}
+        pvesh_cmd+=(--net$i "e1000,bridge=$bridge")
+    done
+
+    pvesh_cmd+=(--cdrom "local:iso/opnsense.iso")
+
+    # Execute the pvesh command
+    "${pvesh_cmd[@]}"
+
+    sleep 2
+
+    echo "args: -drive if=none,id=drive-usb0,format=raw,file=/var/lib/vz/private/usb1.img,cache=none -device usb-storage,id=drive-usb0,drive=drive-usb0,removable=on" >> "/etc/pve/qemu-server/${VMID}.conf"
+
+    echo -e "${red}OPNsense VM deployment is complete. Booting up...${reset}"
+
+    pvesh create /nodes/$NODE_NAME/qemu/778/status/start
+
+    echo -e "${red}Waiting for 180 seconds for OPNSENSE initial boot...${reset}"
+
+    end_time=$((SECONDS+180))
+    while [ $SECONDS -lt $end_time ]; do
+        remaining=$((end_time - SECONDS))
+        echo -ne "Time remaining: $remaining seconds\r"
+        sleep 1
+    done
+
+    echo -e "${red}Performing OPNsense initial installation..."
+
+    install_sequence_1=('i' 'n' 's' 't' 'a' 'l' 'l' 'e' 'r' 'ret' 'o' 'p' 'n' 's' 'e' 'n' 's' 'e' 'ret')
+    install_sequence_2=('ret' 'ret' 'down' 'ret' 'ret' 'left' 'ret')
+
+    for i in "${install_sequence_1[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
+    done
+
+    sleep 1
+
+    for i in "${install_sequence_2[@]}"; do
+        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
+        sleep .5
+    done
+
+    echo -e "${red}Waiting for 150 seconds for OPNsense install...${reset}"
+
+    end_time=$((SECONDS+150))
+    while [ $SECONDS -lt $end_time ]; do
+        remaining=$((end_time - SECONDS))
+        echo -ne "Time remaining: $remaining seconds\r"
+        sleep 1
+    done
+
+    pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "down"
+    pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "ret"
+
+    echo -e "${red}OPNsense Install is now complete. The firewall is rebooting...${reset}"
+    echo -e "${red}Waiting 120 seconds for reboot before initial configuration...${reset}"
+
+    end_time=$((SECONDS+120))
+    while [ $SECONDS -lt $end_time ]; do
+        remaining=$((end_time - SECONDS))
+        echo -ne "Time remaining: $remaining seconds\r"
+        sleep 1
+    done
+
+    echo -e "${red}Sending login sequence...${reset}"
+    send_keystrokes "${login_chars[@]}"
+    echo -e "${red}Entering FW Shell...${reset}"
+    send_keystrokes "8" "ret"
+    echo -e "${red}Creating mountpoint...${reset}"
+    send_keystrokes "${mkdir_chars[@]}"
+    echo -e "${red}Mounting config drive...${reset}"
+    send_keystrokes "${mount_chars[@]}"
+    echo -e "${red}Copying configuration file...${reset}"
+    send_keystrokes "${cp_chars[@]}"
+    sleep 1
+    echo -e "${red}Unmounting config drive...${reset}"
+    send_keystrokes "${umount_chars[@]}"
+    echo -e "${red}Exiting FW Shell...${reset}"
+    send_keystrokes "${exit_chars[@]}"
+    echo -e "${red}Reloading all services...${reset}"
+    send_keystrokes "1" "1" "ret"
+    sleep 10
+    echo -e "${red}Configuration is now complete...${reset}"
+
+
+
+}
+
 function main_menu {
     while true; do
         echo "Select an option:"
         echo "1) Configure Networking"
         echo "2) Deploy pfSense"
         echo "3) Apply pfSense Base Config"
-        echo "4) Create 'Server' Containers"
-        echo "5) Create 'User' VMs"
-        echo "6) Create 'IOT' Containers"
+        echo "4) Deploy and configure OPNsense"
+        echo "5) Create 'Server' Containers"
+        # echo "5) Create 'User' VMs"
+        # echo "6) Create 'IOT' Containers"
+        
         echo "q) Quit"
         read -p "Enter your choice: " choice
 
@@ -272,7 +418,8 @@ function main_menu {
             1) configure_sdn ;;
             2) deploy_pfSense ;;
             3) configure_pfsense ;;
-            4) create_servers ;;
+            4) deploy_opnsense ;;
+            5) create_servers ;;
             q) cleanup
                echo "Exiting the script."
                exit 0 ;;
