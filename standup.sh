@@ -246,7 +246,7 @@ function cleanup {
     echo -e "${red}Cleaning up packages before exit...${reset}"
     apt-get remove -y expect sshpass
     echo -e "${red}Cleaning up files before exit...${reset}"
-    file_list=("standup.sh" "config.xml" "login.exp", "container_1.sh")
+    file_list=("standup.sh" "config.xml" "login.exp" "container_1.sh" "container_2.sh" "container_3.sh")
     for file in "${file_list[@]}"; do
         if test -f "/root/$file"; then
             rm "/root/$file"
