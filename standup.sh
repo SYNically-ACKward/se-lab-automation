@@ -8,17 +8,41 @@ reset=$(tput sgr0)
 # Helper functions
 
 function send_keystrokes() {
-    for i in "$@"; do
-        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
-        sleep 0.1
+    local sleep_duration="0.1"  # Default sleep duration
+
+    # Check if the first argument is a number to set as sleep duration
+    if [[ "$1" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        sleep_duration=$1
+        shift  # Remove the first argument only if it's a sleep duration
+    fi
+
+    # Iterate over the keystrokes passed as remaining arguments
+    for key in "$@"; do
+        # echo "Sending key: $key"  # Debugging: Show the key being sent
+        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$key"
+        sleep $sleep_duration
     done
+}
+
+function countdown_timer() {
+    local duration=$1  # Duration in seconds passed as the first argument
+    local end_time=$((SECONDS + duration))
+
+    echo -e "${red}Sleeping for $duration seconds...${reset}"
+
+    while [ $SECONDS -lt $end_time ]; do
+        local remaining=$((end_time - SECONDS))
+        echo -ne "Time remaining: $remaining seconds\r"
+        sleep 1
+    done
+    echo -ne "\n"  # Move to a new line after the countdown is complete
 }
 
 function cleanup {
     echo -e "${red}Cleaning up packages before exit...${reset}"
     apt-get remove -y expect sshpass
     echo -e "${red}Cleaning up files before exit...${reset}"
-    file_list=("standup.sh" "config.xml" "login.exp" "container_1.sh" "container_2.sh" "container_3.sh")
+    file_list=("standup.sh" "config.xml" "login.exp" "websrv.sh" "ipam.sh")
     for file in "${file_list[@]}"; do
         if test -f "/root/$file"; then
             rm "/root/$file"
@@ -85,6 +109,7 @@ function deploy_pfSense {
     local default_cores=2
     local default_memory=4096  # in MB
     local default_volume_size="32"  # in GB
+    local VMID=777
 
     echo "Enter the number of cores for the VM (default: $default_cores): "
     read cores
@@ -108,7 +133,7 @@ function deploy_pfSense {
     echo -e "${red}Creating pfSense VM...${reset}"
 
     declare -a pvesh_cmd
-    pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid 777 -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
+    pvesh_cmd=(pvesh create /nodes/$NODE_NAME/qemu -vmid $VMID -name pfsense -sockets 1 -cores "$cores" -memory "$memory" -ostype l26 -scsi0 local-lvm:${volume_size})
     nic_order=("vmbr0" "vnet1" "vnet2" "vnet3")
     for (( i=0; i<$NICS; i++ )); do
         bridge=${nic_order[$i]}
@@ -124,24 +149,17 @@ function deploy_pfSense {
 
     pvesh create /nodes/$NODE_NAME/qemu/777/status/start
 
-    echo -e "${red}Waiting for 45 seconds for pfSense initial boot...${reset}"
-
-    sleep 45
+    countdown_timer 45
 
     echo -e "${red}Performing pfSense initial installation..."
 
     install_sequence_1=("ret" "ret" "ret" "ret" "ret" "spc" "ret" "left" "ret")
 
-    for i in "${install_sequence_1[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
-        sleep 1
-    done
+    send_keystrokes 0.2 "${install_sequence_1[@]}"
 
-    echo -e "${red}Waiting 30 seconds for pfSense install to complete before performing reboot...${reset}"
+    countdown_timer 30
 
-    sleep 30
-
-    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "ret"
+    send_keystrokes "ret"
 
     echo -e "${red}pfSense Operating System install is complete...${reset}"
 
@@ -168,36 +186,25 @@ function configure_pfsense {
 
     echo -e "${red}Performing key sequence 1...${reset}"
 
-    for i in "${key_sequence_1[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
-        sleep 1
-    done
+    send_keystrokes 0.5 "${key_sequence_1[@]}"
 
-    echo -e "${red}Sleeping for 10 seconds...${reset}"
-
-    sleep 10
+    countdown_timer 10
 
     echo -e "${red}Performing key sequence 2...${reset}"
 
-    for i in "${key_sequence_2[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
-        sleep 1
-    done
+    send_keystrokes 0.5 "${key_sequence_2[@]}"
 
     echo -e "${red}Sleeping for 10 seconds...${reset}"
 
-    sleep 10
+    countdown_timer 10
 
-    pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "ret"
+    send_keystrokes "ret"
 
     sleep 1
 
     echo -e "${red}Performing key sequence 3...${reset}"
 
-    for i in "${key_sequence_3[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/777/sendkey --key "$i"
-        sleep 1
-    done
+    send_keystrokes 0.5 "${key_sequence_3[@]}"
 
     sleep 1
 
@@ -281,52 +288,32 @@ function deploy_opnsense {
 
     pvesh create /nodes/$NODE_NAME/qemu/778/status/start
 
-    echo -e "${red}Waiting for 180 seconds for OPNSENSE initial boot...${reset}"
+    echo -e "${red}Waiting for 4 minutes for OPNsense initial boot...${reset}"
 
-    end_time=$((SECONDS+180))
-    while [ $SECONDS -lt $end_time ]; do
-        remaining=$((end_time - SECONDS))
-        echo -ne "Time remaining: $remaining seconds\r"
-        sleep 1
-    done
+    countdown_timer 240
 
     echo -e "${red}Performing OPNsense initial installation..."
 
     install_sequence_1=('i' 'n' 's' 't' 'a' 'l' 'l' 'e' 'r' 'ret' 'o' 'p' 'n' 's' 'e' 'n' 's' 'e' 'ret')
     install_sequence_2=('ret' 'ret' 'down' 'ret' 'ret' 'left' 'ret')
 
-    for i in "${install_sequence_1[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
-    done
+    send_keystrokes 0.2 "${install_sequence_1[@]}"
 
     sleep 1
 
-    for i in "${install_sequence_2[@]}"; do
-        pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "$i"
-        sleep .5
-    done
+    send_keystrokes 1 "${install_sequence_2[@]}"
 
-    echo -e "${red}Waiting for 150 seconds for OPNsense install...${reset}"
+    echo -e "${red}Waiting for 4 minutes for OPNsense install...${reset}"
 
-    end_time=$((SECONDS+150))
-    while [ $SECONDS -lt $end_time ]; do
-        remaining=$((end_time - SECONDS))
-        echo -ne "Time remaining: $remaining seconds\r"
-        sleep 1
-    done
+    countdown_timer 240
 
     pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "down"
     pvesh set /nodes/$NODE_NAME/qemu/$VMID/sendkey --key "ret"
 
     echo -e "${red}OPNsense Install is now complete. The firewall is rebooting...${reset}"
-    echo -e "${red}Waiting 120 seconds for reboot before initial configuration...${reset}"
+    echo -e "${red}Waiting 5 minutes for reboot before initial configuration...${reset}"
 
-    end_time=$((SECONDS+120))
-    while [ $SECONDS -lt $end_time ]; do
-        remaining=$((end_time - SECONDS))
-        echo -ne "Time remaining: $remaining seconds\r"
-        sleep 1
-    done
+    countdown_timer 300
 
     echo -e "${red}Sending login sequence...${reset}"
     send_keystrokes "${login_chars[@]}"
@@ -350,6 +337,7 @@ function deploy_opnsense {
 }
 
 function create_servers {
+    local vm_id=800
     echo -e "${red}Updating CT Template Repositories...${reset}"
     pveam update
 
@@ -371,28 +359,40 @@ function create_servers {
         ssh-keygen -b 2048 -t rsa -f /root/.ssh/ -q -N ""
         echo -e "${red}Creating SSH keys..."
     else
-        echo -e "${red}SSH Keys already exist. Continuing..."
+        echo -e "${red}SSH Keys already exist. Continuing...${reset}"
     fi
 
     echo -e "${red}Creating Ubuntu 22.04 containers...${reset}"
 
-    pvesh create /nodes/$NODE_NAME/lxc \
-        --vmid 800 \
-        --ostemplate "local:vztmpl/${template_name}" \
-        --hostname ubuntu1 \
-        --net0 "name=eth0,bridge=vnet2,ip=dhcp,firewall=0" \
-        --ostype "ubuntu" \
-        --password "zscaler" \
-        --storage local-lvm \
-        --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
-        --nameserver "10.2.0.1" \
-        --start 1
+    server_hosts=("websrv" "ipam")
 
-    wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/container_1.sh
+    for i in "${server_hosts[@]}"; do
+        pvesh create /nodes/$NODE_NAME/lxc \
+            --vmid $vm_id \
+            --ostemplate "local:vztmpl/${template_name}" \
+            --hostname $i \
+            --net0 "name=eth0,bridge=vnet2,ip=dhcp,firewall=0" \
+            --ostype "ubuntu" \
+            --password "zscaler" \
+            --storage local-lvm \
+            --ssh-public-keys "$(cat /root/.ssh/id_rsa.pub)" \
+            --nameserver "10.2.0.1" \
+            --start 1
 
-    pct push 800 /root/container_1.sh /root/container_1.sh
+        wget https://raw.githubusercontent.com/SYNically-ACKward/se-lab-automation/main/"$i".sh
 
-    pct exec 800 -- /bin/bash /root/container_1.sh
+        pct push $vm_id /root/"$i".sh /root/"$i".sh
+        pct exec $vm_id -- /bin/bash /root/"$i".sh
+        vm_id=$((vm_id + 1))
+    done
+}
+
+function create_user_vms {
+    echo -e "${red}This component is currently under construction. No changes have been made...${reset}"
+}
+
+function create_iot {
+    echo -e "${red}This component is currently under construction. No changes have been made...${reset}"
 }
 
 function main_menu {
@@ -403,8 +403,8 @@ function main_menu {
         echo "3) Apply pfSense Base Config"
         echo "4) Deploy and configure OPNsense"
         echo "5) Create 'Server' Containers"
-        # echo "6) Create 'User' VMs"
-        # echo "7) Create 'IOT' Containers"
+        echo "6) Create 'User' VMs"
+        echo "7) Create 'IOT' Containers"
         
         echo "q) Quit"
         read -p "Enter your choice: " choice
@@ -415,6 +415,8 @@ function main_menu {
             3) configure_pfsense ;;
             4) deploy_opnsense ;;
             5) create_servers ;;
+            6) create_user_vms ;;
+            7) create_iot ;;
             q) cleanup
                echo "Exiting the script."
                exit 0 ;;
