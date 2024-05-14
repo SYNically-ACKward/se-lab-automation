@@ -367,6 +367,7 @@ function create_servers {
     server_hosts=("websrv" "ipam")
 
     for i in "${server_hosts[@]}"; do
+        echo -e "${red}Creating server container: ${i}...${reset}"
         pvesh create /nodes/$NODE_NAME/lxc \
             --vmid $vm_id \
             --ostemplate "local:vztmpl/${template_name}" \
